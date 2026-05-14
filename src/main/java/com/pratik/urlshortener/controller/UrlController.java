@@ -38,7 +38,7 @@ public class UrlController {
 
         // Create final short URL
         String shortUrl =
-                "http://localhost:8080/" + savedUrl.getShortCode();
+                "https://linkzen-backend-2.onrender.com/" + savedUrl.getShortCode();
 
         // Return response DTO
         return new ShortenUrlResponse(shortUrl);
