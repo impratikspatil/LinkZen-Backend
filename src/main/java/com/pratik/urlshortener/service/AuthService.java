@@ -9,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.pratik.urlshortener.dto.LoginRequest;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,9 +21,7 @@ public class AuthService {
 
     private final BCryptPasswordEncoder passwordEncoder;
 
-    /*
-     * Register new user.
-     */
+
     public AuthResponse signup(
             SignupRequest request
     ) {
@@ -55,6 +56,43 @@ public class AuthService {
 
         return new AuthResponse(
                 "User registered successfully"
+        );
+    }
+
+
+    public AuthResponse login(
+            LoginRequest request
+    ) {
+
+        Optional<User> optionalUser =
+                userRepository.findByEmail(
+                        request.getEmail()
+                );
+
+        if (optionalUser.isEmpty()) {
+
+            throw new RuntimeException(
+                    "Invalid email or password"
+            );
+        }
+
+        User user = optionalUser.get();
+
+        boolean isPasswordMatch =
+                passwordEncoder.matches(
+                        request.getPassword(),
+                        user.getPassword()
+                );
+
+        if (!isPasswordMatch) {
+
+            throw new RuntimeException(
+                    "Invalid email or password"
+            );
+        }
+
+        return new AuthResponse(
+                "Login successful"
         );
     }
 }

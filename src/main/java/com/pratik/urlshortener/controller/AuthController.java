@@ -1,7 +1,9 @@
 package com.pratik.urlshortener.controller;
 
 import com.pratik.urlshortener.dto.AuthResponse;
+import com.pratik.urlshortener.dto.LoginRequest;
 import com.pratik.urlshortener.dto.SignupRequest;
+
 import com.pratik.urlshortener.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -17,9 +19,6 @@ public class AuthController {
 
     private final AuthService authService;
 
-    /*
-     * Signup API
-     */
     @PostMapping("/signup")
     public AuthResponse signup(
 
@@ -29,5 +28,16 @@ public class AuthController {
     ) {
 
         return authService.signup(request);
+    }
+
+    @PostMapping("/login")
+    public AuthResponse login(
+
+            @Valid
+            @RequestBody
+            LoginRequest request
+    ) {
+
+        return authService.login(request);
     }
 }
