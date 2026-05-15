@@ -4,6 +4,7 @@ import com.pratik.urlshortener.model.Url;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /*
@@ -24,4 +25,6 @@ public interface UrlRepository extends MongoRepository<Url, String> {
     boolean existsByShortCode(String shortCode);
 
     Optional<Url> findByOriginalUrl(String originalUrl);
+
+    List<Url> findAllByOrderByCreatedAtDesc();
 }

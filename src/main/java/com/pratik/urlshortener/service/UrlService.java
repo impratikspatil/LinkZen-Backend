@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Random;
 import com.pratik.urlshortener.dto.UrlStatsResponse;
 import java.util.Optional;
@@ -155,9 +156,6 @@ public class UrlService {
     }
 
 
-    /*
-     * Fetch URL statistics using short code.
-     */
     public UrlStatsResponse getUrlStats(String shortCode) {
 
         Url url = urlRepository.findByShortCode(shortCode)
@@ -172,5 +170,9 @@ public class UrlService {
         );
     }
 
+    public List<Url> getAllUrls() {
 
+        return urlRepository
+                .findAllByOrderByCreatedAtDesc();
+    }
 }

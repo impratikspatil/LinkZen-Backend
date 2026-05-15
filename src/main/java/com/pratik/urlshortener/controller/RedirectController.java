@@ -6,9 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 import jakarta.servlet.http.HttpServletRequest;
-/*
- * Handles short URL redirects.
- */
+import java.util.List;
+
 @RestController
 public class RedirectController {
 
@@ -40,5 +39,12 @@ public class RedirectController {
         );
 
         return new RedirectView(url.getOriginalUrl());
+    }
+
+    @GetMapping("/all")
+    public List<Url> getAllUrls() {
+
+        return urlService.getAllUrls();
+
     }
 }
