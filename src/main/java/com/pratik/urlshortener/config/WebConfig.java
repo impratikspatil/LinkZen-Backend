@@ -4,12 +4,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/*
- * Handles CORS configuration.
- */
 @Configuration
-public class WebConfig
-        implements WebMvcConfigurer {
+public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(
@@ -18,10 +14,16 @@ public class WebConfig
 
         registry.addMapping("/**")
                 .allowedOrigins(
-                        "http://localhost:5174",
+                        "http://localhost:5173",
                         "https://link-zen.vercel.app"
                 )
-                .allowedMethods("*")
+                .allowedMethods(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "OPTIONS"
+                )
                 .allowedHeaders("*");
     }
 }
