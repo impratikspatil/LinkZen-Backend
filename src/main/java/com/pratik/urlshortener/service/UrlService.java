@@ -15,6 +15,8 @@ import com.pratik.urlshortener.exception.CustomAliasAlreadyExistsException;
 import com.pratik.urlshortener.model.UrlClick;
 import com.pratik.urlshortener.repository.UrlClickRepository;
 
+import org.springframework.data.redis.core.RedisTemplate;
+
 @Service
 public class UrlService {
 
@@ -24,9 +26,10 @@ public class UrlService {
     @Autowired
     private UrlClickRepository urlClickRepository;
 
-    /*
-     * Characters used for generating short code.
-     */
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+
     private static final String CHARACTERS =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -121,9 +124,16 @@ public class UrlService {
             String referer
     ) {
 
-        Url url = urlRepository.findByShortCode(shortCode)
-                .orElseThrow(() ->
-                        new RuntimeException("Short URL not found"));
+        Url url = (Url) redisTemplate.opsForValue().get(shortCode);
+
+        if (url == null) {
+
+            url = urlRepository.findByShortCode(shortCode)
+                    .orElseThrow(() ->
+                            new RuntimeException("Short URL not found"));
+
+            redisTemplate.opsForValue().set(shortCode, url);
+        }
 
         if (url.getExpiresAt() != null &&
 
