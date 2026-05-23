@@ -43,6 +43,21 @@ public class JwtAuthenticationFilter
         String authHeader =
                 request.getHeader("Authorization");
 
+        String path =
+                request.getServletPath();
+
+        if (path.startsWith("/api/v1/auth")) {
+
+            filterChain.doFilter(
+                    request,
+                    response
+            );
+
+            return;
+        }
+
+
+
         /*
          * If token is missing
          */
