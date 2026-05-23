@@ -21,6 +21,8 @@ public class AuthService {
 
     private final BCryptPasswordEncoder passwordEncoder;
 
+    private final JwtService jwtService;
+
 
     public AuthResponse signup(
             SignupRequest request
@@ -55,7 +57,8 @@ public class AuthService {
         userRepository.save(user);
 
         return new AuthResponse(
-                "User registered successfully"
+                "User registered successfully",
+                null
         );
     }
 
@@ -84,6 +87,11 @@ public class AuthService {
                         user.getPassword()
                 );
 
+        String token =
+                jwtService.generateToken(
+                        user.getEmail()
+                );
+
         if (!isPasswordMatch) {
 
             throw new RuntimeException(
@@ -92,7 +100,8 @@ public class AuthService {
         }
 
         return new AuthResponse(
-                "Login successful"
+                "Login successful",
+                token
         );
     }
 }
