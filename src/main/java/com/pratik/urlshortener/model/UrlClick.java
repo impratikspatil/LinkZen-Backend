@@ -47,4 +47,10 @@ public class UrlClick {
      * Click timestamp.
      */
     private LocalDateTime clickedAt;
+
+    private String browser;
+
+    private String operatingSystem;
+
+    private String deviceType;
 }
