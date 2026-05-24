@@ -59,7 +59,8 @@ public class UrlService {
     public Url createShortUrl(
             String originalUrl,
             String customAlias,
-            Integer expiryInDays
+            Integer expiryInDays,
+            String userEmail
     ) {
 
         // Check if URL already exists
@@ -112,6 +113,7 @@ public class UrlService {
                 .clickCount(0L)
                 .createdAt(LocalDateTime.now())
                 .expiresAt(expiresAt)
+                .userEmail(userEmail)
                 .build();
 
         return urlRepository.save(url);
@@ -180,9 +182,11 @@ public class UrlService {
         );
     }
 
-    public List<Url> getAllUrls() {
+    public List<Url> getAllUrls(
+            String email
+    ) {
 
         return urlRepository
-                .findAllByOrderByCreatedAtDesc();
+                .findByUserEmailOrderByCreatedAtDesc(email);
     }
 }

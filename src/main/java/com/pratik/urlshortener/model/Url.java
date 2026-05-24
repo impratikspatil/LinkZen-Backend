@@ -31,4 +31,6 @@ public class Url implements Serializable {
     private LocalDateTime createdAt;
 
     private LocalDateTime expiresAt;
+
+    private String userEmail;
 }

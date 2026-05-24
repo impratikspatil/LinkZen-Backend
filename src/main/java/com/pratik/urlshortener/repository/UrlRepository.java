@@ -14,12 +14,7 @@ import java.util.Optional;
 @Repository
 public interface UrlRepository extends MongoRepository<Url, String> {
 
-    /*
-     * Find URL document using shortCode.
-     *
-     * Example:
-     * shortCode -> abc123
-     */
+
     Optional<Url> findByShortCode(String shortCode);
 
     boolean existsByShortCode(String shortCode);
@@ -27,4 +22,8 @@ public interface UrlRepository extends MongoRepository<Url, String> {
     Optional<Url> findByOriginalUrl(String originalUrl);
 
     List<Url> findAllByOrderByCreatedAtDesc();
+
+    List<Url> findByUserEmailOrderByCreatedAtDesc(
+            String userEmail
+    );
 }
