@@ -1,21 +1,21 @@
 package com.pratik.urlshortener.service;
 
+import com.pratik.urlshortener.dto.UrlStatsResponse;
+import com.pratik.urlshortener.exception.CustomAliasAlreadyExistsException;
 import com.pratik.urlshortener.exception.UrlExpiredException;
 import com.pratik.urlshortener.model.Url;
+import com.pratik.urlshortener.model.UrlClick;
+import com.pratik.urlshortener.repository.UrlClickRepository;
 import com.pratik.urlshortener.repository.UrlRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Random;
-import com.pratik.urlshortener.dto.UrlStatsResponse;
 import java.util.Optional;
-import com.pratik.urlshortener.exception.CustomAliasAlreadyExistsException;
-import com.pratik.urlshortener.model.UrlClick;
-import com.pratik.urlshortener.repository.UrlClickRepository;
-
-import org.springframework.data.redis.core.RedisTemplate;
+import java.util.Random;
 
 @Service
 public class UrlService {
@@ -29,7 +29,6 @@ public class UrlService {
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
-
     private static final String CHARACTERS =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -42,12 +41,16 @@ public class UrlService {
 
         StringBuilder shortCode = new StringBuilder();
 
-        // Generate 6 character random code
         for (int i = 0; i < 6; i++) {
 
-            int index = random.nextInt(CHARACTERS.length());
+            int index =
+                    random.nextInt(
+                            CHARACTERS.length()
+                    );
 
-            shortCode.append(CHARACTERS.charAt(index));
+            shortCode.append(
+                    CHARACTERS.charAt(index)
+            );
         }
 
         return shortCode.toString();
@@ -63,23 +66,24 @@ public class UrlService {
             String userEmail
     ) {
 
-        // Check if URL already exists
-//        Optional<Url> existingUrl =
-//                urlRepository.findByOriginalUrl(originalUrl);
-//
-//        if (existingUrl.isPresent()) {
-//            return existingUrl.get();
-//        }
-
         String shortCode;
 
         /*
          * Use custom alias if provided.
          */
-        if (customAlias != null && !customAlias.isBlank()) {
+        if (
+                customAlias != null &&
+                        !customAlias.isBlank()
+        ) {
 
-            // Check alias uniqueness
-            if (urlRepository.existsByShortCode(customAlias)) {
+            /*
+             * Check alias uniqueness
+             */
+            if (
+                    urlRepository.existsByShortCode(
+                            customAlias
+                    )
+            ) {
 
                 throw new CustomAliasAlreadyExistsException(
                         "Custom alias already exists"
@@ -90,21 +94,31 @@ public class UrlService {
 
         } else {
 
-            // Generate unique random short code
+            /*
+             * Generate unique random short code
+             */
             do {
-                shortCode = generateShortCode();
 
-            } while (urlRepository.existsByShortCode(shortCode));
+                shortCode =
+                        generateShortCode();
+
+            } while (
+                    urlRepository.existsByShortCode(
+                            shortCode
+                    )
+            );
         }
 
         LocalDateTime expiresAt = null;
 
-        if (expiryInDays != null && expiryInDays > 0) {
+        if (
+                expiryInDays != null &&
+                        expiryInDays > 0
+        ) {
 
-            expiresAt = LocalDateTime.now()
-
-                    .plusDays(expiryInDays);
-
+            expiresAt =
+                    LocalDateTime.now()
+                            .plusDays(expiryInDays);
         }
 
         Url url = Url.builder()
@@ -119,6 +133,7 @@ public class UrlService {
         return urlRepository.save(url);
     }
 
+
     public Url getUrlByShortCode(
             String shortCode,
             String ipAddress,
@@ -126,28 +141,49 @@ public class UrlService {
             String referer
     ) {
 
-        Url url = (Url) redisTemplate.opsForValue().get(shortCode);
+        Url url =
+                (Url) redisTemplate
+                        .opsForValue()
+                        .get(shortCode);
+
 
         if (url == null) {
 
-            url = urlRepository.findByShortCode(shortCode)
+            url = urlRepository
+                    .findByShortCode(shortCode)
                     .orElseThrow(() ->
-                            new RuntimeException("Short URL not found"));
+                            new RuntimeException(
+                                    "Short URL not found"
+                            )
+                    );
 
-            redisTemplate.opsForValue().set(shortCode, url);
+            /*
+             * Save in Redis cache
+             */
+            redisTemplate
+                    .opsForValue()
+                    .set(shortCode, url);
         }
 
-        if (url.getExpiresAt() != null &&
-
-                LocalDateTime.now().isAfter(url.getExpiresAt())) {
+        /*
+         * Expiry check
+         */
+        if (
+                url.getExpiresAt() != null &&
+                        LocalDateTime.now()
+                                .isAfter(
+                                        url.getExpiresAt()
+                                )
+        ) {
 
             throw new UrlExpiredException(
                     "Short URL has expired"
             );
-
         }
 
-
+        /*
+         * Save click analytics
+         */
         UrlClick urlClick = UrlClick.builder()
                 .shortCode(shortCode)
                 .ipAddress(ipAddress)
@@ -158,21 +194,43 @@ public class UrlService {
 
         urlClickRepository.save(urlClick);
 
-        // Increment click count
-        url.setClickCount(url.getClickCount() + 1);
+        /*
+         * Increment click count
+         */
+        url.setClickCount(
+                url.getClickCount() + 1
+        );
 
-        // Save updated document
+        /*
+         * Save updated click count
+         * in MongoDB
+         */
         urlRepository.save(url);
+
+        /*
+         * Update Redis cache also
+         */
+        redisTemplate
+                .opsForValue()
+                .set(shortCode, url);
 
         return url;
     }
 
+    /*
+     * Get URL statistics
+     */
+    public UrlStatsResponse getUrlStats(
+            String shortCode
+    ) {
 
-    public UrlStatsResponse getUrlStats(String shortCode) {
-
-        Url url = urlRepository.findByShortCode(shortCode)
+        Url url = urlRepository
+                .findByShortCode(shortCode)
                 .orElseThrow(() ->
-                        new RuntimeException("Short URL not found"));
+                        new RuntimeException(
+                                "Short URL not found"
+                        )
+                );
 
         return new UrlStatsResponse(
                 url.getOriginalUrl(),
@@ -182,11 +240,16 @@ public class UrlService {
         );
     }
 
+    /*
+     * Get all URLs for logged-in user
+     */
     public List<Url> getAllUrls(
             String email
     ) {
 
         return urlRepository
-                .findByUserEmailOrderByCreatedAtDesc(email);
+                .findByUserEmailOrderByCreatedAtDesc(
+                        email
+                );
     }
 }
