@@ -7,12 +7,15 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
+import org.springframework.security.core.Authentication;
+
 
 @RestController
 public class RedirectController {
 
     @Autowired
     private UrlService urlService;
+
 
     /*
      * Redirect user to original URL.
@@ -42,9 +45,11 @@ public class RedirectController {
     }
 
     @GetMapping("/all")
-    public List<Url> getAllUrls() {
+    public List<Url> getAllUrls(Authentication authentication) {
 
-        return urlService.getAllUrls();
+        String email = authentication.getName();
+
+        return urlService.getAllUrls(email);
 
     }
 }
