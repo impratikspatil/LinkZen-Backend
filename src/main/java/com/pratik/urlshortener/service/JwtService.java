@@ -12,7 +12,7 @@ import java.util.Date;
 public class JwtService {
 
     private static final String SECRET_KEY =
-            "d7f3a8b1c9e4f6a2d8b0c7e5f1a9b3d6";
+            "d7f3a8b1c9e4f6a2d8b0c7e5f1a9b3d6e7c1f4a8b9d2c6e5f7a1b3c8d9e2f4";
 
     /*
      * Generate JWT token
