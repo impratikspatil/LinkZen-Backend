@@ -7,6 +7,7 @@ import com.pratik.urlshortener.model.Url;
 import com.pratik.urlshortener.service.JwtService;
 import com.pratik.urlshortener.service.UrlService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 import jakarta.validation.Valid;
@@ -14,6 +15,8 @@ import com.pratik.urlshortener.dto.UrlStatsResponse;
 
 import java.util.List;
 import org.springframework.security.core.Authentication;
+import org.springframework.http.MediaType;
+
 
 @RestController
 @RequestMapping("/api/v1/url")
@@ -113,5 +116,19 @@ public class UrlController {
                 request.getExpiryInDays(),
                 email
         );
+    }
+
+    @GetMapping(
+            value = "/qr/{shortCode}",
+            produces = MediaType.IMAGE_PNG_VALUE
+    )
+    public ResponseEntity<byte[]> generateQrCode(
+            @PathVariable String shortCode
+    ) {
+
+        byte[] qrCode =
+                urlService.generateQrCode(shortCode);
+
+        return ResponseEntity.ok(qrCode);
     }
 }

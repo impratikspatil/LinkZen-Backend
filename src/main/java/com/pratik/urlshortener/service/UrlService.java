@@ -16,6 +16,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.common.BitMatrix;
+
+import javax.imageio.ImageIO;
+
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 
 @Service
 public class UrlService {
@@ -305,5 +313,75 @@ public class UrlService {
                 .set(shortCode, updatedUrl);
 
         return updatedUrl;
+    }
+
+
+    public byte[] generateQrCode(
+            String shortCode
+    ) {
+
+        try {
+
+            String shortUrl =
+                    "https://linkzen-backend-2.onrender.com/"
+                            + shortCode;
+
+            QRCodeWriter qrCodeWriter =
+                    new QRCodeWriter();
+
+            BitMatrix bitMatrix =
+                    qrCodeWriter.encode(
+                            shortUrl,
+                            BarcodeFormat.QR_CODE,
+                            300,
+                            300
+                    );
+
+            BufferedImage bufferedImage =
+                    new BufferedImage(
+                            300,
+                            300,
+                            BufferedImage.TYPE_INT_RGB
+                    );
+
+            for (
+                    int x = 0;
+                    x < 300;
+                    x++
+            ) {
+
+                for (
+                        int y = 0;
+                        y < 300;
+                        y++
+                ) {
+
+                    bufferedImage.setRGB(
+                            x,
+                            y,
+                            bitMatrix.get(x, y)
+                                    ? 0x000000
+                                    : 0xFFFFFF
+                    );
+                }
+            }
+
+            ByteArrayOutputStream outputStream =
+                    new ByteArrayOutputStream();
+
+            ImageIO.write(
+                    bufferedImage,
+                    "png",
+                    outputStream
+            );
+
+            return outputStream.toByteArray();
+
+        } catch (Exception exception) {
+
+            throw new RuntimeException(
+                    "Failed to generate QR code"
+            );
+        }
     }
 }
