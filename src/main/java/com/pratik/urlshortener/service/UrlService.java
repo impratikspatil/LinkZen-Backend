@@ -198,6 +198,9 @@ public class UrlService {
                 .userAgent(userAgent)
                 .referer(referer)
                 .clickedAt(LocalDateTime.now())
+                .browser(detectBrowser(userAgent))
+                .operatingSystem(detectOperatingSystem(userAgent))
+                .deviceType(detectDeviceType(userAgent))
                 .build();
 
         urlClickRepository.save(urlClick);
@@ -384,4 +387,76 @@ public class UrlService {
             );
         }
     }
+
+    private String detectBrowser(
+            String userAgent
+    ) {
+
+        if (userAgent == null) {
+            return "Unknown";
+        }
+
+        if (userAgent.contains("Chrome")) {
+            return "Chrome";
+        }
+
+        if (userAgent.contains("Firefox")) {
+            return "Firefox";
+        }
+
+        if (userAgent.contains("Safari")) {
+            return "Safari";
+        }
+
+        return "Other";
+    }
+
+    private String detectOperatingSystem(
+            String userAgent
+    ) {
+
+        if (userAgent == null) {
+            return "Unknown";
+        }
+
+        if (userAgent.contains("Windows")) {
+            return "Windows";
+        }
+
+        if (userAgent.contains("Mac")) {
+            return "MacOS";
+        }
+
+        if (userAgent.contains("Android")) {
+            return "Android";
+        }
+
+        if (userAgent.contains("iPhone")) {
+            return "iOS";
+        }
+
+        return "Other";
+    }
+
+    private String detectDeviceType(
+            String userAgent
+    ) {
+
+        if (userAgent == null) {
+            return "Unknown";
+        }
+
+        if (
+                userAgent.contains("Mobile") ||
+                        userAgent.contains("Android") ||
+                        userAgent.contains("iPhone")
+        ) {
+
+            return "Mobile";
+        }
+
+        return "Desktop";
+    }
+
+
 }
