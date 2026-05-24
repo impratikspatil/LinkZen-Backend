@@ -2,6 +2,7 @@ package com.pratik.urlshortener.controller;
 
 import com.pratik.urlshortener.dto.ShortenUrlRequest;
 import com.pratik.urlshortener.dto.ShortenUrlResponse;
+import com.pratik.urlshortener.dto.UpdateExpiryRequest;
 import com.pratik.urlshortener.model.Url;
 import com.pratik.urlshortener.service.JwtService;
 import com.pratik.urlshortener.service.UrlService;
@@ -12,7 +13,7 @@ import jakarta.validation.Valid;
 import com.pratik.urlshortener.dto.UrlStatsResponse;
 
 import java.util.List;
-
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/v1/url")
@@ -80,5 +81,37 @@ public class UrlController {
         return urlService.getUrlStats(shortCode);
     }
 
+    @DeleteMapping("/{shortCode}")
+    public String deleteUrl(
+            @PathVariable String shortCode,
+            Authentication authentication
+    ) {
 
+        String email =
+                authentication.getName();
+
+        urlService.deleteUrl(
+                shortCode,
+                email
+        );
+
+        return "URL deleted successfully";
+    }
+
+    @PutMapping("/{shortCode}/expiry")
+    public Url updateExpiry(
+            @PathVariable String shortCode,
+            @RequestBody UpdateExpiryRequest request,
+            Authentication authentication
+    ) {
+
+        String email =
+                authentication.getName();
+
+        return urlService.updateExpiry(
+                shortCode,
+                request.getExpiryInDays(),
+                email
+        );
+    }
 }

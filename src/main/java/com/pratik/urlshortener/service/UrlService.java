@@ -252,4 +252,58 @@ public class UrlService {
                         email
                 );
     }
+
+    public void deleteUrl(
+            String shortCode,
+            String email
+    ) {
+
+        Url url = urlRepository
+                .findByShortCode(shortCode)
+                .orElseThrow(() ->
+                        new RuntimeException("URL not found"));
+
+        if (!url.getUserEmail().equals(email)) {
+
+            throw new RuntimeException(
+                    "Unauthorized access"
+            );
+        }
+
+        urlRepository.delete(url);
+
+        redisTemplate.delete(shortCode);
+    }
+
+    public Url updateExpiry(
+            String shortCode,
+            Integer expiryInDays,
+            String email
+    ) {
+
+        Url url = urlRepository
+                .findByShortCode(shortCode)
+                .orElseThrow(() ->
+                        new RuntimeException("URL not found"));
+
+        if (!url.getUserEmail().equals(email)) {
+
+            throw new RuntimeException(
+                    "Unauthorized access"
+            );
+        }
+
+        url.setExpiresAt(
+                LocalDateTime.now()
+                        .plusDays(expiryInDays)
+        );
+
+        Url updatedUrl =
+                urlRepository.save(url);
+
+        redisTemplate.opsForValue()
+                .set(shortCode, updatedUrl);
+
+        return updatedUrl;
+    }
 }
