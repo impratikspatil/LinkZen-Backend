@@ -47,7 +47,8 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 "/api/v1/auth/**",
-                                "/{shortCode}"
+                                "/{shortCode}",
+                                "/api/v1/url/qr/**"
                         ).permitAll()
 
                         .anyRequest().authenticated()
