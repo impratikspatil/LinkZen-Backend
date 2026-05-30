@@ -53,4 +53,6 @@ public class UrlClick {
     private String operatingSystem;
 
     private String deviceType;
+
+    private String userEmail;
 }

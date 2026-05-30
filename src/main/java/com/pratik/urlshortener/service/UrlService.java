@@ -1,5 +1,6 @@
 package com.pratik.urlshortener.service;
 
+import com.pratik.urlshortener.dto.AnalyticsResponse;
 import com.pratik.urlshortener.dto.UrlStatsResponse;
 import com.pratik.urlshortener.exception.CustomAliasAlreadyExistsException;
 import com.pratik.urlshortener.exception.UrlExpiredException;
@@ -13,9 +14,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
+
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.common.BitMatrix;
@@ -24,6 +24,7 @@ import javax.imageio.ImageIO;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.util.stream.Collectors;
 
 @Service
 public class UrlService {
@@ -201,6 +202,7 @@ public class UrlService {
                 .browser(detectBrowser(userAgent))
                 .operatingSystem(detectOperatingSystem(userAgent))
                 .deviceType(detectDeviceType(userAgent))
+                .userEmail(url.getUserEmail())
                 .build();
 
         urlClickRepository.save(urlClick);
@@ -456,6 +458,53 @@ public class UrlService {
         }
 
         return "Desktop";
+    }
+
+
+    public AnalyticsResponse getAnalytics(String email) {
+
+        List<UrlClick> clicks =
+                urlClickRepository.findByUserEmail(email);
+
+        Map<String, Long> browserStats =
+                clicks.stream()
+                        .collect(Collectors.groupingBy(
+                                UrlClick::getBrowser,
+                                Collectors.counting()
+                        ));
+
+        Map<String, Long> deviceStats =
+                clicks.stream()
+                        .collect(Collectors.groupingBy(
+                                UrlClick::getDeviceType,
+                                Collectors.counting()
+                        ));
+
+        Map<String, Long> weeklyClicks =
+                clicks.stream()
+                        .collect(Collectors.groupingBy(
+                                click -> click.getClickedAt()
+                                        .toLocalDate()
+                                        .toString(),
+                                Collectors.counting()
+                        ));
+
+        List<UrlClick> recentActivities =
+                clicks.stream()
+                        .sorted(
+                                Comparator.comparing(
+                                        UrlClick::getClickedAt
+                                ).reversed()
+                        )
+                        .limit(10)
+                        .toList();
+
+        return AnalyticsResponse.builder()
+                .browserStats(browserStats)
+                .deviceStats(deviceStats)
+                .weeklyClicks(weeklyClicks)
+                .recentActivities(recentActivities)
+                .build();
     }
 
 

@@ -1,8 +1,6 @@
 package com.pratik.urlshortener.controller;
 
-import com.pratik.urlshortener.dto.ShortenUrlRequest;
-import com.pratik.urlshortener.dto.ShortenUrlResponse;
-import com.pratik.urlshortener.dto.UpdateExpiryRequest;
+import com.pratik.urlshortener.dto.*;
 import com.pratik.urlshortener.model.Url;
 import com.pratik.urlshortener.service.JwtService;
 import com.pratik.urlshortener.service.UrlService;
@@ -11,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 import jakarta.validation.Valid;
-import com.pratik.urlshortener.dto.UrlStatsResponse;
 
 import java.util.List;
 import org.springframework.security.core.Authentication;
@@ -130,5 +127,15 @@ public class UrlController {
                 urlService.generateQrCode(shortCode);
 
         return ResponseEntity.ok(qrCode);
+    }
+
+
+    @GetMapping("/analytics")
+    public ResponseEntity<AnalyticsResponse> getAnalytics(
+            Authentication authentication) {
+
+        return ResponseEntity.ok(
+                urlService.getAnalytics(authentication.getName())
+        );
     }
 }
