@@ -477,10 +477,19 @@ public class UrlService {
                         ));
 
         Map<String, Long> countryStats =
+
                 clicks.stream()
+
                         .collect(Collectors.groupingBy(
-                                UrlClick::getCountry,
+
+                                click -> click.getCountry() == null
+
+                                        ? "Unknown"
+
+                                        : click.getCountry(),
+
                                 Collectors.counting()
+
                         ));
 
         Map<String, Long> deviceStats =
