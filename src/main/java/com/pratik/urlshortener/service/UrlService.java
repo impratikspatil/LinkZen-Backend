@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -204,6 +205,7 @@ public class UrlService {
                 .operatingSystem(detectOperatingSystem(userAgent))
                 .deviceType(detectDeviceType(userAgent))
                 .userEmail(url.getUserEmail())
+                .country(detectCountry(ipAddress))
                 .build();
 
         urlClickRepository.save(urlClick);
@@ -474,6 +476,13 @@ public class UrlService {
                                 Collectors.counting()
                         ));
 
+        Map<String, Long> countryStats =
+                clicks.stream()
+                        .collect(Collectors.groupingBy(
+                                UrlClick::getCountry,
+                                Collectors.counting()
+                        ));
+
         Map<String, Long> deviceStats =
                 clicks.stream()
                         .collect(Collectors.groupingBy(
@@ -482,13 +491,26 @@ public class UrlService {
                         ));
 
         Map<String, Long> weeklyClicks =
-                clicks.stream()
-                        .collect(Collectors.groupingBy(
-                                click -> click.getClickedAt()
-                                        .toLocalDate()
-                                        .toString(),
-                                Collectors.counting()
-                        ));
+                new LinkedHashMap<>();
+
+        for (int i = 6; i >= 0; i--) {
+
+            String date =
+                    LocalDate.now()
+                            .minusDays(i)
+                            .toString();
+
+            long count =
+                    clicks.stream()
+                            .filter(click ->
+                                    click.getClickedAt()
+                                            .toLocalDate()
+                                            .toString()
+                                            .equals(date))
+                            .count();
+
+            weeklyClicks.put(date, count);
+        }
 
         List<UrlClick> recentActivities =
                 clicks.stream()
@@ -503,6 +525,7 @@ public class UrlService {
         return AnalyticsResponse.builder()
                 .browserStats(browserStats)
                 .deviceStats(deviceStats)
+                .countryStats(countryStats)
                 .weeklyClicks(weeklyClicks)
                 .recentActivities(recentActivities)
                 .build();
@@ -573,5 +596,20 @@ public class UrlService {
                 .deviceStats(deviceStats)
                 .recentActivities(recentActivities)
                 .build();
+    }
+
+    private String detectCountry(
+            String ipAddress
+    ) {
+
+        if (
+                ipAddress == null ||
+                        ipAddress.equals("127.0.0.1")
+        ) {
+
+            return "Local";
+        }
+
+        return "Unknown";
     }
 }

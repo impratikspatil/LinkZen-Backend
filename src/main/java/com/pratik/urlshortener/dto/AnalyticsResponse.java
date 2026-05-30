@@ -19,4 +19,6 @@ public class AnalyticsResponse {
 
     private List<UrlClick> recentActivities;
 
+    private Map<String, Long> countryStats;
+
 }
