@@ -1,6 +1,7 @@
 package com.pratik.urlshortener.service;
 
 import com.pratik.urlshortener.dto.AnalyticsResponse;
+import com.pratik.urlshortener.dto.UrlAnalyticsResponse;
 import com.pratik.urlshortener.dto.UrlStatsResponse;
 import com.pratik.urlshortener.exception.CustomAliasAlreadyExistsException;
 import com.pratik.urlshortener.exception.UrlExpiredException;
@@ -507,5 +508,70 @@ public class UrlService {
                 .build();
     }
 
+    public UrlAnalyticsResponse getUrlAnalytics(
+            String shortCode,
+            String email
+    ) {
 
+        Url url = urlRepository
+                .findByShortCode(shortCode)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "URL not found"
+                        )
+                );
+
+        if (!url.getUserEmail().equals(email)) {
+
+            throw new RuntimeException(
+                    "Unauthorized access"
+            );
+        }
+
+        List<UrlClick> clicks =
+                urlClickRepository.findByShortCode(
+                        shortCode
+                );
+
+        Map<String, Long> browserStats =
+                clicks.stream()
+                        .collect(Collectors.groupingBy(
+                                UrlClick::getBrowser,
+                                Collectors.counting()
+                        ));
+
+        Map<String, Long> deviceStats =
+                clicks.stream()
+                        .collect(Collectors.groupingBy(
+                                UrlClick::getDeviceType,
+                                Collectors.counting()
+                        ));
+
+        List<UrlClick> recentActivities =
+                clicks.stream()
+                        .sorted(
+                                Comparator.comparing(
+                                        UrlClick::getClickedAt
+                                ).reversed()
+                        )
+                        .limit(10)
+                        .toList();
+
+        return UrlAnalyticsResponse.builder()
+                .shortCode(url.getShortCode())
+                .originalUrl(url.getOriginalUrl())
+                .clickCount(url.getClickCount())
+                .createdAt(
+                        url.getCreatedAt().toString()
+                )
+                .expiresAt(
+                        url.getExpiresAt() == null
+                                ? null
+                                : url.getExpiresAt().toString()
+                )
+                .browserStats(browserStats)
+                .deviceStats(deviceStats)
+                .recentActivities(recentActivities)
+                .build();
+    }
 }

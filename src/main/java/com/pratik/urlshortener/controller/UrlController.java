@@ -138,4 +138,20 @@ public class UrlController {
                 urlService.getAnalytics(authentication.getName())
         );
     }
+
+        @GetMapping("/analytics/{shortCode}")
+        public ResponseEntity<UrlAnalyticsResponse>
+        getUrlAnalytics(
+                @PathVariable String shortCode,
+                Authentication authentication
+        ) {
+
+            return ResponseEntity.ok(
+
+                    urlService.getUrlAnalytics(
+                            shortCode,
+                            authentication.getName()
+                    )
+            );
+        }
 }
