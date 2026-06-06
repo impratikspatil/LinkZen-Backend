@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.web.servlet.view.RedirectView;
 
 /*
  * Handles application-wide exceptions.
@@ -52,15 +53,19 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UrlExpiredException.class)
-    public ResponseEntity<Map<String, String>> handleURLExpireException(
+
+    public RedirectView handleURLExpireException(
+
             UrlExpiredException ex
+
     ) {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", ex.getMessage());
-        return new ResponseEntity<>(
-                response,
-                HttpStatus.CONFLICT
+
+        return new RedirectView(
+
+                "https://link-zen.vercel.app/expired-link"
+
         );
+
     }
 
     @ExceptionHandler(RuntimeException.class)
