@@ -37,25 +37,45 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(CustomAliasAlreadyExistsException.class)
-    public ResponseEntity<String> handleCustomAliasAlreadyExistsException(
+    public ResponseEntity<Map<String, String>> handleCustomAliasAlreadyExistsException(
             CustomAliasAlreadyExistsException ex
     ) {
+
+        Map<String, String> response = new HashMap<>();
+
+        response.put("message", ex.getMessage());
+
         return new ResponseEntity<>(
-                ex.getMessage(),
+                response,
                 HttpStatus.CONFLICT
         );
-
     }
 
     @ExceptionHandler(UrlExpiredException.class)
-    public ResponseEntity<String> handleURLExpireException(
+    public ResponseEntity<Map<String, String>> handleURLExpireException(
             UrlExpiredException ex
     ) {
+        Map<String, String> response = new HashMap<>();
+        response.put("message", ex.getMessage());
         return new ResponseEntity<>(
-                ex.getMessage(),
+                response,
                 HttpStatus.CONFLICT
         );
+    }
 
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, String>> handleRuntimeException(
+            RuntimeException ex
+    ) {
+
+        Map<String, String> response = new HashMap<>();
+
+        response.put("message", ex.getMessage());
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.BAD_REQUEST
+        );
     }
 
 }
