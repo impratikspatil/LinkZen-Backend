@@ -607,18 +607,46 @@ public class UrlService {
                 .build();
     }
 
-    private String detectCountry(
-            String ipAddress
-    ) {
+    private String detectCountry(String ipAddress) {
 
-        if (
-                ipAddress == null ||
-                        ipAddress.equals("127.0.0.1")
-        ) {
-
+        if (ipAddress == null ||
+                ipAddress.equals("127.0.0.1") ||
+                ipAddress.equals("0:0:0:0:0:0:0:1")) {
             return "Local";
         }
 
-        return "Unknown";
+        try {
+
+            String url = "http://ip-api.com/json/" + ipAddress + "?fields=country";
+
+            java.net.HttpURLConnection connection =
+                    (java.net.HttpURLConnection)
+                            new java.net.URL(url).openConnection();
+
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(3000);
+            connection.setReadTimeout(3000);
+
+            java.util.Scanner scanner =
+                    new java.util.Scanner(
+                            connection.getInputStream()
+                    );
+
+            String response = scanner.useDelimiter("\\A").next();
+            scanner.close();
+
+            // Response: {"country":"India"}
+            String country = response
+                    .replace("{", "")
+                    .replace("}", "")
+                    .replace("\"country\":", "")
+                    .replace("\"", "")
+                    .trim();
+
+            return country.isEmpty() ? "Unknown" : country;
+
+        } catch (Exception e) {
+            return "Unknown";
+        }
     }
 }

@@ -61,9 +61,7 @@ public class GlobalExceptionHandler {
     ) {
 
         return new RedirectView(
-
                 "https://link-zen.vercel.app/expired-link"
-
         );
 
     }
