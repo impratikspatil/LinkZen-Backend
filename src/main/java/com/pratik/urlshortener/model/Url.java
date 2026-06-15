@@ -1,5 +1,6 @@
 package com.pratik.urlshortener.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,4 +34,10 @@ public class Url implements Serializable {
     private LocalDateTime expiresAt;
 
     private String userEmail;
+
+    @JsonProperty("expired")
+    public boolean isExpired() {
+        return expiresAt != null &&
+                LocalDateTime.now().isAfter(expiresAt);
+    }
 }
