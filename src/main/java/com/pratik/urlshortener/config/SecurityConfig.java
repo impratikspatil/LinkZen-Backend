@@ -15,11 +15,15 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    private final RateLimitingFilter rateLimitingFilter;
+
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -53,7 +57,10 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated()
                 )
-
+                .addFilterBefore(
+                        rateLimitingFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
