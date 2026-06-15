@@ -29,37 +29,37 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String ip = request.getRemoteAddr();
+        String path = request.getRequestURI();
 
+        // Skip rate limiting for Swagger
+        if (
+                path.startsWith("/swagger-ui") ||
+                        path.startsWith("/v3/api-docs")
+        ) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String ip = request.getRemoteAddr();
         String key = "rate_limit:" + ip;
 
         Long count = redisTemplate.opsForValue().increment(key);
 
         if (count == 1) {
-            redisTemplate.expire(
-                    key,
-                    WINDOW_SECONDS,
-                    TimeUnit.SECONDS
-            );
+            redisTemplate.expire(key, WINDOW_SECONDS, TimeUnit.SECONDS);
         }
 
         if (count > MAX_REQUESTS) {
-
-            response.setStatus(
-                    HttpStatus.TOO_MANY_REQUESTS.value()
-            );
-
-            response.setContentType(
-                    "application/json"
-            );
-
+            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+            response.setContentType("application/json");
             response.getWriter().write(
                     "{\"message\": \"Too many requests. Please try again after 1 minute.\"}"
             );
-
             return;
         }
 
         filterChain.doFilter(request, response);
     }
+
+
 }
