@@ -5,6 +5,8 @@ import com.pratik.urlshortener.dto.UrlAnalyticsResponse;
 import com.pratik.urlshortener.dto.UrlStatsResponse;
 import com.pratik.urlshortener.exception.CustomAliasAlreadyExistsException;
 import com.pratik.urlshortener.exception.UrlExpiredException;
+import com.pratik.urlshortener.messaging.dto.ClickEventMessage;
+import com.pratik.urlshortener.messaging.publisher.ClickEventPublisher;
 import com.pratik.urlshortener.model.Url;
 import com.pratik.urlshortener.model.UrlClick;
 import com.pratik.urlshortener.repository.UrlClickRepository;
@@ -39,6 +41,13 @@ public class UrlService {
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+
+    /*
+     * Injected to publish click events
+     * to RabbitMQ queue asynchronously.
+     */
+    @Autowired
+    private ClickEventPublisher clickEventPublisher;
 
     private static final String CHARACTERS =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -193,42 +202,26 @@ public class UrlService {
         }
 
         /*
-         * Save click analytics
+         * Build click event message and publish to RabbitMQ.
+         *
+         * This is NON-BLOCKING — the redirect happens
+         * immediately after this line.
+         *
+         * ClickEventConsumer will handle:
+         * - Saving UrlClick analytics
+         * - Incrementing click count
+         * - Updating Redis cache
          */
-        UrlClick urlClick = UrlClick.builder()
+        ClickEventMessage clickEvent = ClickEventMessage.builder()
                 .shortCode(shortCode)
+                .userEmail(url.getUserEmail())
                 .ipAddress(ipAddress)
                 .userAgent(userAgent)
                 .referer(referer)
                 .clickedAt(LocalDateTime.now())
-                .browser(detectBrowser(userAgent))
-                .operatingSystem(detectOperatingSystem(userAgent))
-                .deviceType(detectDeviceType(userAgent))
-                .userEmail(url.getUserEmail())
-                .country(detectCountry(ipAddress))
                 .build();
 
-        urlClickRepository.save(urlClick);
-
-        /*
-         * Increment click count
-         */
-        url.setClickCount(
-                url.getClickCount() + 1
-        );
-
-        /*
-         * Save updated click count
-         * in MongoDB
-         */
-        urlRepository.save(url);
-
-        /*
-         * Update Redis cache also
-         */
-        redisTemplate
-                .opsForValue()
-                .set(shortCode, url);
+        clickEventPublisher.publishClickEvent(clickEvent);
 
         return url;
     }
@@ -393,77 +386,6 @@ public class UrlService {
         }
     }
 
-    private String detectBrowser(
-            String userAgent
-    ) {
-
-        if (userAgent == null) {
-            return "Unknown";
-        }
-
-        if (userAgent.contains("Chrome")) {
-            return "Chrome";
-        }
-
-        if (userAgent.contains("Firefox")) {
-            return "Firefox";
-        }
-
-        if (userAgent.contains("Safari")) {
-            return "Safari";
-        }
-
-        return "Other";
-    }
-
-    private String detectOperatingSystem(
-            String userAgent
-    ) {
-
-        if (userAgent == null) {
-            return "Unknown";
-        }
-
-        if (userAgent.contains("Windows")) {
-            return "Windows";
-        }
-
-        if (userAgent.contains("Mac")) {
-            return "MacOS";
-        }
-
-        if (userAgent.contains("Android")) {
-            return "Android";
-        }
-
-        if (userAgent.contains("iPhone")) {
-            return "iOS";
-        }
-
-        return "Other";
-    }
-
-    private String detectDeviceType(
-            String userAgent
-    ) {
-
-        if (userAgent == null) {
-            return "Unknown";
-        }
-
-        if (
-                userAgent.contains("Mobile") ||
-                        userAgent.contains("Android") ||
-                        userAgent.contains("iPhone")
-        ) {
-
-            return "Mobile";
-        }
-
-        return "Desktop";
-    }
-
-
     public AnalyticsResponse getAnalytics(String email) {
 
         List<UrlClick> clicks =
@@ -605,48 +527,5 @@ public class UrlService {
                 .deviceStats(deviceStats)
                 .recentActivities(recentActivities)
                 .build();
-    }
-
-    private String detectCountry(String ipAddress) {
-
-        if (ipAddress == null ||
-                ipAddress.equals("127.0.0.1") ||
-                ipAddress.equals("0:0:0:0:0:0:0:1")) {
-            return "Local";
-        }
-
-        try {
-
-            String url = "http://ip-api.com/json/" + ipAddress + "?fields=country";
-
-            java.net.HttpURLConnection connection =
-                    (java.net.HttpURLConnection)
-                            new java.net.URL(url).openConnection();
-
-            connection.setRequestMethod("GET");
-            connection.setConnectTimeout(3000);
-            connection.setReadTimeout(3000);
-
-            java.util.Scanner scanner =
-                    new java.util.Scanner(
-                            connection.getInputStream()
-                    );
-
-            String response = scanner.useDelimiter("\\A").next();
-            scanner.close();
-
-            // Response: {"country":"India"}
-            String country = response
-                    .replace("{", "")
-                    .replace("}", "")
-                    .replace("\"country\":", "")
-                    .replace("\"", "")
-                    .trim();
-
-            return country.isEmpty() ? "Unknown" : country;
-
-        } catch (Exception e) {
-            return "Unknown";
-        }
     }
 }
